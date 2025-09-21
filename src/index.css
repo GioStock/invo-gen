@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --app-bg: #e3f2fd; /* Light blue - background */
+  --text-color: #686963; /* Dark gray - text */
+  --card-bg: #fafafa; /* Off white - cards */
+  --card-border: #8aa29e; /* Sage green - borders */
+  --btn-bg: #db5461; /* Coral red - buttons */
+  --btn-bg-hover: #686963; /* Dark gray - button hover */
+  --btn-text: #ffffff;
+  --navbar-bg: #fafafa; /* Off white - navbar */
+}
+
+/* Container using the background variable */
+.app-shell {
+  background-color: var(--app-bg);
+  color: var(--text-color);
+  min-height: 100vh;
+}
+
+@layer components {
+  /* Containers */
+  .page-container {
+    @apply max-w-7xl mx-auto;
+  }
+
+  /* Cards */
+  .card {
+    background-color: var(--card-bg);
+    border-color: var(--card-border);
+    @apply rounded-xl shadow-sm border;
+  }
+  .card-header {
+    @apply px-6 py-4 border-b border-gray-100;
+  }
+  .card-body {
+    @apply p-6;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    color: var(--btn-text);
+    background-color: var(--btn-bg);
+    @apply btn focus:ring-blue-500;
+  }
+  .btn-primary:hover {
+    background-color: var(--btn-bg-hover);
+  }
+  .btn-ghost {
+    @apply btn text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:ring-gray-300;
+  }
+
+  /* Inputs */
+  .input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400;
+  }
+  .select {
+    @apply px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-gray {
+    @apply badge bg-gray-100 text-gray-800;
+  }
+  .badge-yellow {
+    @apply badge bg-yellow-100 text-yellow-800;
+  }
+  .badge-green {
+    @apply badge bg-green-100 text-green-800;
+  }
+  .badge-red {
+    @apply badge bg-red-100 text-red-800;
+  }
+}
+
+@layer utilities {
+  @keyframes slide-in-right {
+    0% { opacity: 0; transform: translateX(16px); }
+    100% { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slide-in-left {
+    0% { opacity: 0; transform: translateX(-16px); }
+    100% { opacity: 1; transform: translateX(0); }
+  }
+  .view-slide-right {
+    animation: slide-in-right 1s ease;
+  }
+  .view-slide-left {
+    animation: slide-in-left 1s ease;
+  }
+}
+
+/* Print styles: show only invoice area, remove borders/shadows, full white */
+@media print {
+  body, html { background: #ffffff !important; }
+  body * { visibility: hidden !important; }
+  #invoice-print-area, #invoice-print-area * { visibility: visible !important; }
+  #invoice-print-area {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
