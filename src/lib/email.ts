@@ -269,6 +269,11 @@ export async function sendInvoiceEmail(data: EmailInvoiceData, pdfBuffer: ArrayB
     });
 
     const result = await response.json();
+    
+    console.log('📧 Risposta Edge Function:', { 
+      status: response.status, 
+      result 
+    });
 
     if (!response.ok || !result.success) {
       return { 
