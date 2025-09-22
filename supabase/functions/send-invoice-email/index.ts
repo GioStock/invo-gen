@@ -36,6 +36,10 @@ serve(async (req) => {
           email: 'info.invogenpro@gmail.com',
           name: emailData.companyName
         },
+        reply_to: {
+          email: emailData.companyEmail,
+          name: emailData.companyName
+        },
         personalizations: [{
           to: [{ email: emailData.to }],
           subject: template.subject

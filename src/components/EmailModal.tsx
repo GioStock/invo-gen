@@ -50,7 +50,7 @@ export function EmailModal({ isOpen, onClose, invoice, onEmailSent }: EmailModal
         status: invoice.status,
         pdfUrl: '#', // URL temporaneo
         companyName: invoice.company?.name || 'Azienda',
-        companyEmail: 'info.invogenpro@gmail.com', // Email verificata su SendGrid
+        companyEmail: invoice.company?.email || 'info@azienda.com', // Email utente per Reply-To
         notes: message
       };
 
@@ -74,25 +74,80 @@ export function EmailModal({ isOpen, onClose, invoice, onEmailSent }: EmailModal
     await sendTest(testEmail, companyName, companyEmail);
   };
 
-  // Generazione PDF reale usando html2canvas + jsPDF
+  // Generazione PDF identico a quello scaricabile
   const generatePDFBuffer = async (invoice: Invoice): Promise<ArrayBuffer> => {
-    // Per ora simuliamo un PDF (implementazione completa richiederebbe html2canvas)
-    // Creiamo un PDF base con jsPDF
+    // TODO: Implementare html2canvas per PDF identico a InvoiceView
+    // Per ora creiamo un PDF più dettagliato
     const { jsPDF } = await import('jspdf');
     const pdf = new jsPDF();
     
-    // Aggiungi contenuto base
-    pdf.setFontSize(20);
-    pdf.text(`Fattura ${invoice.invoice_number}`, 20, 30);
+    // Header con logo e info azienda (simulato)
+    pdf.setFontSize(24);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('FATTURA', 20, 30);
     
+    pdf.setFontSize(16);
+    pdf.text(`N. ${invoice.invoice_number}`, 20, 45);
+    
+    // Dati azienda (top-right)
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    const companyName = invoice.company?.name || 'La tua azienda';
+    pdf.text(companyName, 140, 30);
+    
+    // Dati cliente
     pdf.setFontSize(12);
-    pdf.text(`Cliente: ${invoice.customer?.name || 'N/A'}`, 20, 50);
-    pdf.text(`Data: ${new Date(invoice.issue_date).toLocaleDateString('it-IT')}`, 20, 60);
-    pdf.text(`Scadenza: ${new Date(invoice.due_date).toLocaleDateString('it-IT')}`, 20, 70);
-    pdf.text(`Totale: €${invoice.total.toFixed(2)}`, 20, 80);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('INTESTATO A:', 20, 70);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(invoice.customer?.name || 'Cliente', 20, 80);
+    if (invoice.customer?.address) pdf.text(invoice.customer.address, 20, 90);
+    if (invoice.customer?.vat_number) pdf.text(`P.IVA: ${invoice.customer.vat_number}`, 20, 100);
     
+    // Date
+    pdf.text(`Data emissione: ${new Date(invoice.issue_date).toLocaleDateString('it-IT')}`, 20, 120);
+    pdf.text(`Data scadenza: ${new Date(invoice.due_date).toLocaleDateString('it-IT')}`, 20, 130);
+    
+    // Items table (simulata)
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('DESCRIZIONE', 20, 150);
+    pdf.text('QTÀ', 120, 150);
+    pdf.text('PREZZO', 140, 150);
+    pdf.text('TOTALE', 170, 150);
+    
+    pdf.line(20, 155, 190, 155); // Linea orizzontale
+    
+    // Items (da invoice.invoice_items se disponibili)
+    let yPos = 165;
+    pdf.setFont('helvetica', 'normal');
+    if (invoice.invoice_items && invoice.invoice_items.length > 0) {
+      invoice.invoice_items.forEach((item, index) => {
+        pdf.text(item.description, 20, yPos);
+        pdf.text(item.quantity.toString(), 120, yPos);
+        pdf.text(`€${item.unit_price.toFixed(2)}`, 140, yPos);
+        pdf.text(`€${item.total.toFixed(2)}`, 170, yPos);
+        yPos += 10;
+      });
+    } else {
+      pdf.text('Servizi forniti', 20, yPos);
+      pdf.text('1', 120, yPos);
+      pdf.text(`€${invoice.subtotal.toFixed(2)}`, 140, yPos);
+      pdf.text(`€${invoice.subtotal.toFixed(2)}`, 170, yPos);
+      yPos += 10;
+    }
+    
+    // Totali
+    pdf.line(20, yPos + 5, 190, yPos + 5);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(`SUBTOTALE: €${invoice.subtotal.toFixed(2)}`, 120, yPos + 15);
+    pdf.text(`IVA (${invoice.tax_rate}%): €${invoice.tax_amount.toFixed(2)}`, 120, yPos + 25);
+    pdf.text(`TOTALE: €${invoice.total.toFixed(2)}`, 120, yPos + 35);
+    
+    // Note
     if (invoice.notes) {
-      pdf.text(`Note: ${invoice.notes}`, 20, 100);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Note:', 20, yPos + 55);
+      pdf.text(invoice.notes, 20, yPos + 65);
     }
     
     // Converti in ArrayBuffer
