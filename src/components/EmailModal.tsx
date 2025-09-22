@@ -74,62 +74,12 @@ export function EmailModal({ isOpen, onClose, invoice, onEmailSent }: EmailModal
     await sendTest(testEmail, companyName, companyEmail);
   };
 
-  // Generazione PDF identico a quello scaricabile usando html2canvas
+  // Generazione PDF (temporaneamente usando jsPDF per evitare stack overflow)
   const generatePDFBuffer = async (invoice: Invoice): Promise<ArrayBuffer> => {
-    // Trova l'elemento della fattura nella pagina (se esiste)
-    const element = document.getElementById('invoice-print-area');
+    console.log('📄 Generando PDF per email...');
     
-    if (element) {
-      // METODO 1: Usa html2canvas se la fattura è visibile (stesso metodo del download)
-      const html2canvas = (await import('html2canvas')).default;
-      const { jsPDF } = await import('jspdf');
-      
-      // Assicurati che tutte le immagini siano caricate
-      const images = element.querySelectorAll('img');
-      const imagePromises = Array.from(images).map((img) => {
-        return new Promise((resolve) => {
-          if (img.complete) {
-            resolve(img);
-          } else {
-            img.onload = () => resolve(img);
-            img.onerror = () => resolve(img);
-          }
-        });
-      });
-      
-      await Promise.all(imagePromises);
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      const canvas = await html2canvas(element, { 
-        scale: 2, 
-        backgroundColor: '#ffffff',
-        useCORS: true,
-        allowTaint: false,
-        logging: false
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'pt', 'a4');
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      if (imgHeight <= pageHeight) {
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      } else {
-        let position = 0;
-        while (position < imgHeight) {
-          pdf.addImage(imgData, 'PNG', 0, -position, imgWidth, imgHeight);
-          position += pageHeight;
-          if (position < imgHeight) {
-            pdf.addPage();
-          }
-        }
-      }
-      
-      return pdf.output('arraybuffer');
-    } else {
+    // TEMPORANEO: Usa sempre jsPDF per evitare problemi con html2canvas
+    // TODO: Implementare html2canvas in modo sicuro in futuro
       // METODO 2: Fallback con jsPDF se la fattura non è visibile
       const { jsPDF } = await import('jspdf');
       const pdf = new jsPDF();
