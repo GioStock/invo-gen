@@ -50,7 +50,7 @@ export function EmailModal({ isOpen, onClose, invoice, onEmailSent }: EmailModal
         status: invoice.status,
         pdfUrl: '#', // URL temporaneo
         companyName: invoice.company?.name || 'Azienda',
-        companyEmail: invoice.company?.email || 'info@azienda.com',
+        companyEmail: 'info.invogenpro@gmail.com', // Email verificata su SendGrid
         notes: message
       };
 

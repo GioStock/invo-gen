@@ -33,7 +33,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         from: {
-          email: emailData.companyEmail,
+          email: 'info.invogenpro@gmail.com',
           name: emailData.companyName
         },
         personalizations: [{
