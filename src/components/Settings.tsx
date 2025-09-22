@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useToast } from './Toast';
 
 export function Settings() {
+  console.log('🔄 Settings component re-render');
   const { addToast } = useToast();
   const [logoUrl, setLogoUrl] = React.useState<string | null>(null);
   const fileRef = React.useRef<HTMLInputElement | null>(null);
@@ -23,16 +24,21 @@ export function Settings() {
 
   const [open, setOpen] = React.useState<{profile:boolean;brand:boolean}>({ profile: false, brand: false });
   
+  console.log('🎛️ Current accordion state:', open);
+  
   const Section = ({ title, id, children, summary }: { title: string; id: keyof typeof open; children: React.ReactNode; summary?: React.ReactNode }) => {
     const isOpen = open[id];
     const contentRef = React.useRef<HTMLDivElement>(null);
     const [maxHeight, setMaxHeight] = React.useState<number>(0);
 
     React.useEffect(() => {
+      console.log(`🔧 Section ${id}: isOpen changed to`, isOpen);
       if (isOpen) {
         const height = contentRef.current?.scrollHeight || 0;
+        console.log(`📏 Section ${id}: setting maxHeight to`, height);
         setMaxHeight(height);
       } else {
+        console.log(`📏 Section ${id}: closing, maxHeight to 0`);
         setMaxHeight(0);
       }
     }, [isOpen]);
@@ -42,6 +48,7 @@ export function Settings() {
       if (isOpen && contentRef.current) {
         const height = contentRef.current.scrollHeight;
         if (height !== maxHeight) {
+          console.log(`📐 Section ${id}: height changed from ${maxHeight} to ${height}`);
           setMaxHeight(height);
         }
       }
@@ -53,7 +60,11 @@ export function Settings() {
           type="button"
           className="w-full flex items-center justify-between px-6 py-4 border-b transition-all duration-200 hover:bg-gray-50"
           style={{ borderColor: 'var(--card-border)' }}
-          onClick={(e) => { e.preventDefault(); setOpen({ ...open, [id]: !open[id] }); }}
+          onClick={(e) => { 
+            e.preventDefault(); 
+            console.log(`🔄 Button clicked for ${id}: current state`, open[id], '-> new state', !open[id]);
+            setOpen({ ...open, [id]: !open[id] }); 
+          }}
           aria-expanded={isOpen}
         >
           <div>
@@ -331,7 +342,10 @@ export function Settings() {
             <input
               type="text"
               value={companyData.name}
-              onChange={(e) => setCompanyData({...companyData, name: e.target.value})}
+              onChange={(e) => {
+                console.log(`✏️ Input change - Name: "${e.target.value}"`);
+                setCompanyData({...companyData, name: e.target.value});
+              }}
               className="input"
               placeholder="Nome dell'azienda"
             />
@@ -341,7 +355,10 @@ export function Settings() {
             <input
               type="email"
               value={companyData.email}
-              onChange={(e) => setCompanyData({...companyData, email: e.target.value})}
+              onChange={(e) => {
+                console.log(`✏️ Input change - Email: "${e.target.value}"`);
+                setCompanyData({...companyData, email: e.target.value});
+              }}
               className="input"
               placeholder="email@azienda.com"
             />
