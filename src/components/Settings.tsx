@@ -264,7 +264,7 @@ export function Settings() {
         id="profile" 
         isOpen={open.profile}
         onToggle={toggleProfile}
-        summary={<span>{companyData.name || '—'} • {companyData.email || '—'}</span>}
+        summary="Gestisci i dati della tua azienda"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
