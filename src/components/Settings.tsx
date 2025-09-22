@@ -37,6 +37,16 @@ export function Settings() {
       }
     }, [isOpen]);
 
+    // Evita che l'accordion si chiuda durante l'editing
+    React.useEffect(() => {
+      if (isOpen && contentRef.current) {
+        const height = contentRef.current.scrollHeight;
+        if (height !== maxHeight) {
+          setMaxHeight(height);
+        }
+      }
+    });
+
     return (
       <div className="card">
         <button
@@ -81,6 +91,7 @@ export function Settings() {
     (async () => {
       const { data: auth } = await supabase.auth.getUser();
       const uid = auth.user?.id;
+      const userEmail = auth.user?.email || '';
       if (!uid) return;
 
       // Carica dati aziendali
@@ -107,7 +118,7 @@ export function Settings() {
             vat_number: company.vat_number || '',
             fiscal_code: company.fiscal_code || '',
             phone: company.phone || '',
-            email: company.email || ''
+            email: company.email || userEmail // Usa email utente se non c'è quella aziendale
           });
 
           // Carica logo specifico della company
@@ -124,6 +135,12 @@ export function Settings() {
             }
           }
         }
+      } else {
+        // Se non c'è ancora un'azienda, preimposta almeno l'email dell'utente
+        setCompanyData(prev => ({
+          ...prev,
+          email: userEmail
+        }));
       }
     })();
   }, []);
