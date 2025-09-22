@@ -29,15 +29,21 @@ export function CustomerForm({ customer, onClose, onSave }: CustomerFormProps) {
     setLoading(true);
 
     try {
+      let result;
       if (customer) {
-        await updateCustomer(customer.id, formData);
+        result = await updateCustomer(customer.id, formData);
       } else {
-        await createCustomer(formData);
+        result = await createCustomer(formData);
       }
+      
+      console.log('✅ Cliente salvato con successo:', result);
       onSave();
-    } catch (error) {
-      console.error('Errore nel salvataggio cliente:', error);
-      alert('Errore nel salvataggio del cliente');
+    } catch (error: any) {
+      console.error('❌ Errore nel salvataggio cliente:', error);
+      
+      // Mostra errore specifico se disponibile
+      const errorMessage = error?.message || 'Errore nel salvataggio del cliente';
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
