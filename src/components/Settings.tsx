@@ -3,11 +3,9 @@ import { supabase } from '../lib/supabase';
 import { useToast } from './Toast';
 
 export function Settings() {
-  console.log('🔄 Settings component re-render');
   const { addToast } = useToast();
   const [logoUrl, setLogoUrl] = React.useState<string | null>(null);
   const fileRef = React.useRef<HTMLInputElement | null>(null);
-  
   
   // Dati aziendali
   const [companyData, setCompanyData] = React.useState({
@@ -22,9 +20,41 @@ export function Settings() {
     email: ''
   });
 
-  // Ottimizzazione: callback per aggiornare i dati senza re-render completo
-  const updateCompanyField = React.useCallback((field: string, value: string) => {
-    setCompanyData(prev => ({ ...prev, [field]: value }));
+  // OTTIMIZZAZIONE CRITICA: Handlers stabili con useCallback
+  const handleNameChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setCompanyData(prev => ({ ...prev, name: e.target.value }));
+  }, []);
+
+  const handleEmailChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setCompanyData(prev => ({ ...prev, email: e.target.value }));
+  }, []);
+
+  const handleAddressChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setCompanyData(prev => ({ ...prev, address: e.target.value }));
+  }, []);
+
+  const handleCityChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setCompanyData(prev => ({ ...prev, city: e.target.value }));
+  }, []);
+
+  const handlePostalCodeChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setCompanyData(prev => ({ ...prev, postal_code: e.target.value }));
+  }, []);
+
+  const handleCountryChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setCompanyData(prev => ({ ...prev, country: e.target.value }));
+  }, []);
+
+  const handleVatNumberChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setCompanyData(prev => ({ ...prev, vat_number: e.target.value }));
+  }, []);
+
+  const handleFiscalCodeChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setCompanyData(prev => ({ ...prev, fiscal_code: e.target.value }));
+  }, []);
+
+  const handlePhoneChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setCompanyData(prev => ({ ...prev, phone: e.target.value }));
   }, []);
 
   const [open, setOpen] = React.useState<{profile:boolean;brand:boolean}>({ profile: false, brand: false });
@@ -33,7 +63,6 @@ export function Settings() {
   const toggleSection = React.useCallback((id: keyof typeof open) => {
     setOpen(prev => ({ ...prev, [id]: !prev[id] }));
   }, []);
-  
   
   const Section = ({ title, id, children, summary }: { title: string; id: keyof typeof open; children: React.ReactNode; summary?: React.ReactNode }) => {
     const isOpen = open[id];
@@ -119,195 +148,107 @@ export function Settings() {
             const { data } = supabase.storage.from('branding').getPublicUrl(logoPath);
             if (data?.publicUrl) {
               setLogoUrl(data.publicUrl);
-              localStorage.setItem(`companyLogoUrl-${profile.company_id}`, data.publicUrl);
             }
           }
         }
-      } else {
-        // Se non c'è ancora un'azienda, preimposta almeno l'email dell'utente
-        setCompanyData(prev => ({
-          ...prev,
-          email: userEmail
-        }));
       }
     })();
   }, []);
 
   const saveCompanyData = async () => {
-    if (!companyData.name.trim()) {
-      addToast({ type: 'error', title: 'Errore', message: 'Il nome dell\'azienda è obbligatorio' });
-      return;
-    }
-
-    const { data: auth } = await supabase.auth.getUser();
-    const uid = auth.user?.id;
-    if (!uid) return;
-
     try {
-      // Trova o crea company
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) return;
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('company_id')
         .eq('id', uid)
         .single();
 
-      let companyId = profile?.company_id;
-
-      if (!companyId) {
-        const { data: newCompany, error: companyError } = await supabase
+      if (profile?.company_id) {
+        const { error } = await supabase
           .from('companies')
-          .insert({
-            name: companyData.name,
-            address: companyData.address,
-            city: companyData.city,
-            postal_code: companyData.postal_code,
-            country: companyData.country,
-            vat_number: companyData.vat_number,
-            fiscal_code: companyData.fiscal_code,
-            phone: companyData.phone,
-            email: companyData.email
-          })
-          .select()
-          .single();
+          .update(companyData)
+          .eq('id', profile.company_id);
 
-        if (companyError) throw companyError;
-        companyId = newCompany.id;
-
-        // Aggiorna profile con company_id
-        await supabase
-          .from('profiles')
-          .update({ company_id: companyId })
-          .eq('id', uid);
-      } else {
-        // Aggiorna company esistente
-        const { error: updateError } = await supabase
-          .from('companies')
-          .update({
-            name: companyData.name,
-            address: companyData.address,
-            city: companyData.city,
-            postal_code: companyData.postal_code,
-            country: companyData.country,
-            vat_number: companyData.vat_number,
-            fiscal_code: companyData.fiscal_code,
-            phone: companyData.phone,
-            email: companyData.email
-          })
-          .eq('id', companyId);
-
-        if (updateError) throw updateError;
+        if (error) throw error;
+        addToast({ type: 'success', title: 'Successo', message: 'Dati aziendali salvati con successo!' });
       }
-
-      addToast({ type: 'success', title: 'Successo', message: 'Dati aziendali salvati' });
-    } catch (error) {
-      console.error('Errore aggiornamento dati aziendali:', error);
-      addToast({ type: 'error', title: 'Errore', message: 'Errore durante il salvataggio' });
+    } catch (error: any) {
+      addToast({ type: 'error', title: 'Errore', message: error.message });
     }
   };
 
-  const uploadLogo: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
-    const file = e.target.files?.[0];
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (!file) return;
-    
-    // Preview immediato
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = String(reader.result);
-      setLogoUrl(dataUrl);
-    };
-    reader.readAsDataURL(file);
 
     try {
-      // Controlla se l'utente è autenticato
       const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) {
-        addToast({ type: 'error', title: 'Errore', message: 'Devi essere autenticato per caricare un logo' });
-        return;
-      }
+      const uid = auth.user?.id;
+      if (!uid) return;
 
-      // Ottieni company_id dell'utente corrente
       const { data: profile } = await supabase
         .from('profiles')
         .select('company_id')
-        .eq('id', auth.user.id)
+        .eq('id', uid)
         .single();
 
-      if (!profile?.company_id) {
-        addToast({ type: 'error', title: 'Errore', message: 'Profilo aziendale non trovato' });
-        return;
-      }
+      if (!profile?.company_id) return;
 
-      const companyId = profile.company_id;
+      // Upload del file
+      const fileExt = file.name.split('.').pop();
+      const fileName = `logo-${profile.company_id}.${fileExt}`;
       
-      // Upload su Supabase con nome univoco per company
-      const ext = file.name.split('.').pop() || 'png';
-      const path = `logo-${companyId}.${ext}`;
-      
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { data, error } = await supabase.storage
         .from('branding')
-        .upload(path, file, { upsert: true, cacheControl: '3600' });
-      
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        addToast({ type: 'error', title: 'Errore Upload', message: uploadError.message });
-        return;
+        .upload(fileName, file, { upsert: true });
+
+      if (error) throw error;
+
+      // Ottieni URL pubblico
+      const { data: publicUrl } = supabase.storage
+        .from('branding')
+        .getPublicUrl(fileName);
+
+      if (publicUrl?.publicUrl) {
+        setLogoUrl(publicUrl.publicUrl);
+        localStorage.setItem(`companyLogoUrl-${profile.company_id}`, publicUrl.publicUrl);
+        addToast({ type: 'success', title: 'Successo', message: 'Logo caricato con successo!' });
       }
-      
-      const { data: urlData } = supabase.storage.from('branding').getPublicUrl(path);
-      if (urlData?.publicUrl) {
-        localStorage.setItem(`companyLogoUrl-${companyId}`, urlData.publicUrl);
-        setLogoUrl(urlData.publicUrl);
-        addToast({ type: 'success', title: 'Successo', message: 'Logo aggiornato' });
-      }
-    } catch (error) {
-      console.error('Error uploading logo:', error);
-      addToast({ type: 'error', title: 'Errore', message: 'Errore durante l\'upload' });
+    } catch (error: any) {
+      addToast({ type: 'error', title: 'Errore', message: error.message });
     }
   };
 
   const removeLogo = async () => {
     try {
-      // Ottieni company_id per rimuovere il logo corretto
       const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) return;
+      const uid = auth.user?.id;
+      if (!uid) return;
 
       const { data: profile } = await supabase
         .from('profiles')
         .select('company_id')
-        .eq('id', auth.user.id)
+        .eq('id', uid)
         .single();
 
-      if (profile?.company_id) {
-        // Rimuovi dal localStorage
-        localStorage.removeItem(`companyLogoUrl-${profile.company_id}`);
-        
-        // Rimuovi da Supabase Storage
-        const logoPath = `logo-${profile.company_id}.png`;
-        await supabase.storage.from('branding').remove([logoPath]);
-      }
-      
+      if (!profile?.company_id) return;
+
       setLogoUrl(null);
-      addToast({ type: 'info', title: 'Info', message: 'Logo rimosso' });
-    } catch (error) {
-      console.error('Errore rimozione logo:', error);
-      addToast({ type: 'error', title: 'Errore', message: 'Errore durante la rimozione del logo' });
+      localStorage.removeItem(`companyLogoUrl-${profile.company_id}`);
+      addToast({ type: 'success', title: 'Successo', message: 'Logo rimosso con successo!' });
+    } catch (error: any) {
+      addToast({ type: 'error', title: 'Errore', message: error.message });
     }
   };
 
-  const Toast = ({ message, type }: { message: string; type: 'success' | 'error' | 'info' }) => (
-    <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded shadow-lg ${
-      type === 'success' ? 'bg-green-500 text-white' :
-      type === 'error' ? 'bg-red-500 text-white' :
-      'bg-blue-500 text-white'
-    }`}>
-      {message}
-    </div>
-  );
-
   return (
-    <div className="page-container space-y-6">
-      <h1 className="text-2xl font-bold" style={{ color: 'var(--text-color)' }}>Impostazioni</h1>
-
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <h1 className="text-2xl font-bold mb-6" style={{ color: 'var(--text-color)' }}>Impostazioni</h1>
+      
       <Section 
         title="Profilo Aziendale" 
         id="profile" 
@@ -319,7 +260,7 @@ export function Settings() {
             <input
               type="text"
               value={companyData.name}
-              onChange={(e) => updateCompanyField('name', e.target.value)}
+              onChange={handleNameChange}
               className="input"
               placeholder="Nome dell'azienda"
             />
@@ -329,7 +270,7 @@ export function Settings() {
             <input
               type="email"
               value={companyData.email}
-              onChange={(e) => updateCompanyField('email', e.target.value)}
+              onChange={handleEmailChange}
               className="input"
               placeholder="email@azienda.com"
             />
@@ -339,7 +280,7 @@ export function Settings() {
             <input
               type="text"
               value={companyData.address}
-              onChange={(e) => updateCompanyField('address', e.target.value)}
+              onChange={handleAddressChange}
               className="input"
               placeholder="Via, numero civico"
             />
@@ -349,7 +290,7 @@ export function Settings() {
             <input
               type="text"
               value={companyData.city}
-              onChange={(e) => updateCompanyField('city', e.target.value)}
+              onChange={handleCityChange}
               className="input"
               placeholder="Città"
             />
@@ -359,7 +300,7 @@ export function Settings() {
             <input
               type="text"
               value={companyData.postal_code}
-              onChange={(e) => updateCompanyField('postal_code', e.target.value)}
+              onChange={handlePostalCodeChange}
               className="input"
               placeholder="CAP"
             />
@@ -369,7 +310,7 @@ export function Settings() {
             <input
               type="text"
               value={companyData.country}
-              onChange={(e) => updateCompanyField('country', e.target.value)}
+              onChange={handleCountryChange}
               className="input"
               placeholder="Paese"
             />
@@ -379,7 +320,7 @@ export function Settings() {
             <input
               type="text"
               value={companyData.vat_number}
-              onChange={(e) => updateCompanyField('vat_number', e.target.value)}
+              onChange={handleVatNumberChange}
               className="input"
               placeholder="IT12345678901"
             />
@@ -389,7 +330,7 @@ export function Settings() {
             <input
               type="text"
               value={companyData.fiscal_code}
-              onChange={(e) => updateCompanyField('fiscal_code', e.target.value)}
+              onChange={handleFiscalCodeChange}
               className="input"
               placeholder="Codice fiscale"
             />
@@ -399,7 +340,7 @@ export function Settings() {
             <input
               type="tel"
               value={companyData.phone}
-              onChange={(e) => updateCompanyField('phone', e.target.value)}
+              onChange={handlePhoneChange}
               className="input"
               placeholder="+39 123 456 7890"
             />
@@ -412,29 +353,50 @@ export function Settings() {
         </div>
       </Section>
 
-      <Section title="Brand" id="brand" summary={logoUrl ? <span>Logo caricato</span> : <span>Nessun logo</span>}>
+      <Section 
+        title="Brand" 
+        id="brand"
+        summary="Logo caricato"
+      >
         <div className="space-y-4">
-          {logoUrl && (
-            <div className="flex items-center gap-4">
-              <img src={logoUrl} alt="Logo preview" className="h-16 w-auto object-contain border rounded" />
-              <div className="flex gap-2">
-                <button className="btn" onClick={() => fileRef.current?.click()} type="button">Cambia Logo</button>
-                <button className="btn-ghost text-red-600" onClick={removeLogo} type="button">Rimuovi</button>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Logo Aziendale</label>
+            {logoUrl ? (
+              <div className="flex items-center space-x-4">
+                <img src={logoUrl} alt="Logo" className="w-16 h-16 object-contain bg-gray-100 rounded" />
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    className="btn-secondary"
+                  >
+                    Cambia Logo
+                  </button>
+                  <button
+                    onClick={removeLogo}
+                    className="btn-secondary text-red-600 hover:text-red-700"
+                  >
+                    Rimuovi
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-          {!logoUrl && (
-            <div className="flex items-center gap-4">
-              <div className="h-16 w-24 bg-gray-100 border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-gray-500 text-sm">
-                Nessun logo
-              </div>
-              <button className="btn" onClick={() => fileRef.current?.click()} type="button">Carica Logo</button>
-            </div>
-          )}
-          <input ref={fileRef} className="hidden" type="file" accept="image/*" onChange={uploadLogo} />
+            ) : (
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="btn-secondary"
+              >
+                Carica Logo
+              </button>
+            )}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              onChange={handleLogoUpload}
+              className="hidden"
+            />
+          </div>
         </div>
       </Section>
-
     </div>
   );
 }
