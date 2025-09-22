@@ -74,97 +74,13 @@ export function EmailModal({ isOpen, onClose, invoice, onEmailSent }: EmailModal
     await sendTest(testEmail, companyName, companyEmail);
   };
 
-  // Generazione PDF identico al download usando html2canvas (con protezioni)
+  // Generazione PDF usando jsPDF (stabile, niente html2canvas per ora)
   const generatePDFBuffer = async (invoice: Invoice): Promise<ArrayBuffer> => {
-    console.log('📄 Generando PDF identico al download...');
+    console.log('📄 Generando PDF con jsPDF (stabile)...');
     
-    // Trova l'elemento della fattura nella pagina
-    const element = document.getElementById('invoice-print-area');
-    
-    if (element) {
-      try {
-        console.log('✅ Elemento fattura trovato, usando html2canvas...');
-        const html2canvas = (await import('html2canvas')).default;
-        const { jsPDF } = await import('jspdf');
-        
-        // PROTEZIONE: Nascondi temporaneamente elementi problematici
-        const modals = document.querySelectorAll('[role="dialog"], .fixed.inset-0');
-        const originalDisplay: string[] = [];
-        modals.forEach((modal, index) => {
-          const element = modal as HTMLElement;
-          originalDisplay[index] = element.style.display;
-          element.style.display = 'none';
-        });
-        
-        // Aspetta che le immagini siano caricate
-        const images = element.querySelectorAll('img');
-        await Promise.all(Array.from(images).map((img) => {
-          return new Promise((resolve) => {
-            if (img.complete) resolve(img);
-            else {
-              img.onload = () => resolve(img);
-              img.onerror = () => resolve(img);
-            }
-          });
-        }));
-        
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
-        // Genera canvas con opzioni sicure
-        const canvas = await html2canvas(element, { 
-          scale: 2, 
-          backgroundColor: '#ffffff',
-          useCORS: true,
-          allowTaint: false,
-          logging: false,
-          ignoreElements: (el) => {
-            // Ignora elementi che potrebbero causare loop
-            return el.classList.contains('fixed') || 
-                   el.classList.contains('modal') ||
-                   el.getAttribute('role') === 'dialog';
-          }
-        });
-        
-        // Ripristina elementi nascosti
-        modals.forEach((modal, index) => {
-          const element = modal as HTMLElement;
-          element.style.display = originalDisplay[index];
-        });
-        
-        // Crea PDF identico al download
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'pt', 'a4');
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const imgWidth = pageWidth;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
-        if (imgHeight <= pageHeight) {
-          pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-        } else {
-          let position = 0;
-          while (position < imgHeight) {
-            pdf.addImage(imgData, 'PNG', 0, -position, imgWidth, imgHeight);
-            position += pageHeight;
-            if (position < imgHeight) {
-              pdf.addPage();
-            }
-          }
-        }
-        
-        console.log('✅ PDF generato con html2canvas');
-        return pdf.output('arraybuffer');
-        
-      } catch (error) {
-        console.error('❌ Errore html2canvas, usando fallback:', error);
-        // Fallback a jsPDF se html2canvas fallisce
-      }
-    }
-    
-    // FALLBACK: jsPDF se html2canvas non funziona
-    console.log('📄 Usando fallback jsPDF...');
-    const { jsPDF } = await import('jspdf');
-    const pdf = new jsPDF();
+    try {
+      const { jsPDF } = await import('jspdf');
+      const pdf = new jsPDF();
     
     // Header con logo e info azienda (simulato)
     pdf.setFontSize(24);
@@ -235,9 +151,23 @@ export function EmailModal({ isOpen, onClose, invoice, onEmailSent }: EmailModal
       pdf.text(invoice.notes, 20, yPos + 65);
     }
     
-      // Converti in ArrayBuffer
+        // Converti in ArrayBuffer
       const pdfArrayBuffer = pdf.output('arraybuffer');
+      console.log('✅ PDF generato con successo, dimensione:', pdfArrayBuffer.byteLength);
       return pdfArrayBuffer;
+      
+    } catch (error) {
+      console.error('❌ Errore durante generazione PDF:', error);
+      
+      // PDF minimo di emergenza se tutto fallisce
+      const { jsPDF } = await import('jspdf');
+      const emergencyPdf = new jsPDF();
+      emergencyPdf.text('FATTURA - Errore generazione', 20, 30);
+      emergencyPdf.text(`Numero: ${invoice.invoice_number}`, 20, 50);
+      emergencyPdf.text(`Cliente: ${invoice.customer?.name || 'N/A'}`, 20, 70);
+      emergencyPdf.text(`Totale: €${invoice.total.toFixed(2)}`, 20, 90);
+      
+      return emergencyPdf.output('arraybuffer');
     }
   };
 

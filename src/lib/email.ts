@@ -1,20 +1,5 @@
-import sgMail from '@sendgrid/mail';
-
-// Inizializza SendGrid SOLO se la chiave è valida (evita errori in browser)
-const SENDGRID_KEY = import.meta.env.VITE_SENDGRID_API_KEY as string | undefined;
-const IS_SENDGRID_CONFIGURED = Boolean(SENDGRID_KEY && SENDGRID_KEY.startsWith('SG.'));
-if (IS_SENDGRID_CONFIGURED) {
-  try {
-    sgMail.setApiKey(SENDGRID_KEY as string);
-  } catch (e) {
-    // Evita di bloccare il client in caso di errore runtime
-    // L'invio email fallirà in modo controllato nelle funzioni sotto
-    console.warn('SendGrid non inizializzato:', e);
-  }
-} else {
-  // In sviluppo o produzione senza chiave valida non inizializziamo
-  console.warn('SendGrid non configurato: manca VITE_SENDGRID_API_KEY o non inizia con "SG."');
-}
+// NOTA: SendGrid viene gestito solo lato server (Supabase Edge Function)
+// Il frontend non deve mai avere accesso alla API key di SendGrid
 
 export interface EmailInvoiceData {
   to: string;
