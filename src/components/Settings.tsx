@@ -35,29 +35,8 @@ export function Settings() {
   }, []);
   
   
-  const Section = React.memo(({ title, id, children, summary }: { title: string; id: keyof typeof open; children: React.ReactNode; summary?: React.ReactNode }) => {
+  const Section = ({ title, id, children, summary }: { title: string; id: keyof typeof open; children: React.ReactNode; summary?: React.ReactNode }) => {
     const isOpen = open[id];
-    const contentRef = React.useRef<HTMLDivElement>(null);
-    const [maxHeight, setMaxHeight] = React.useState<number>(0);
-
-    React.useEffect(() => {
-      if (isOpen) {
-        const height = contentRef.current?.scrollHeight || 0;
-        setMaxHeight(height);
-      } else {
-        setMaxHeight(0);
-      }
-    }, [isOpen]);
-
-    // Evita che l'accordion si chiuda durante l'editing
-    React.useEffect(() => {
-      if (isOpen && contentRef.current) {
-        const height = contentRef.current.scrollHeight;
-        if (height !== maxHeight) {
-          setMaxHeight(height);
-        }
-      }
-    });
 
     return (
       <div className="card">
@@ -78,7 +57,7 @@ export function Settings() {
           <div className="flex items-center gap-2">
             <span className="text-sm opacity-70">{isOpen ? 'Nascondi' : 'Mostra'}</span>
             <svg
-              className={`w-4 h-4 transition-transform duration-1000 ease-in-out ${isOpen ? 'rotate-180' : ''}`}
+              className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -87,20 +66,14 @@ export function Settings() {
             </svg>
           </div>
         </button>
-        <div 
-          className="overflow-hidden transition-all duration-1000 ease-in-out"
-          style={{ 
-            maxHeight: `${maxHeight}px`,
-            opacity: isOpen ? 1 : 0
-          }}
-        >
-          <div ref={contentRef} className="p-6">
+        {isOpen && (
+          <div className="p-6">
             {children}
           </div>
-        </div>
+        )}
       </div>
     );
-  });
+  };
 
   React.useEffect(() => {
     (async () => {
