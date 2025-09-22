@@ -23,27 +23,28 @@ export function Settings() {
   });
 
   // Ottimizzazione: callback per aggiornare i dati senza re-render completo
-  const updateCompanyField = React.useCallback((field: keyof typeof companyData, value: string) => {
+  const updateCompanyField = React.useCallback((field: string, value: string) => {
     setCompanyData(prev => ({ ...prev, [field]: value }));
   }, []);
 
   const [open, setOpen] = React.useState<{profile:boolean;brand:boolean}>({ profile: false, brand: false });
+
+  // Memoizza il toggle per evitare re-render
+  const toggleSection = React.useCallback((id: keyof typeof open) => {
+    setOpen(prev => ({ ...prev, [id]: !prev[id] }));
+  }, []);
   
-  console.log('🎛️ Current accordion state:', open);
   
-  const Section = ({ title, id, children, summary }: { title: string; id: keyof typeof open; children: React.ReactNode; summary?: React.ReactNode }) => {
+  const Section = React.memo(({ title, id, children, summary }: { title: string; id: keyof typeof open; children: React.ReactNode; summary?: React.ReactNode }) => {
     const isOpen = open[id];
     const contentRef = React.useRef<HTMLDivElement>(null);
     const [maxHeight, setMaxHeight] = React.useState<number>(0);
 
     React.useEffect(() => {
-      console.log(`🔧 Section ${id}: isOpen changed to`, isOpen);
       if (isOpen) {
         const height = contentRef.current?.scrollHeight || 0;
-        console.log(`📏 Section ${id}: setting maxHeight to`, height);
         setMaxHeight(height);
       } else {
-        console.log(`📏 Section ${id}: closing, maxHeight to 0`);
         setMaxHeight(0);
       }
     }, [isOpen]);
@@ -53,7 +54,6 @@ export function Settings() {
       if (isOpen && contentRef.current) {
         const height = contentRef.current.scrollHeight;
         if (height !== maxHeight) {
-          console.log(`📐 Section ${id}: height changed from ${maxHeight} to ${height}`);
           setMaxHeight(height);
         }
       }
@@ -67,8 +67,7 @@ export function Settings() {
           style={{ borderColor: 'var(--card-border)' }}
           onClick={(e) => { 
             e.preventDefault(); 
-            console.log(`🔄 Button clicked for ${id}: current state`, open[id], '-> new state', !open[id]);
-            setOpen({ ...open, [id]: !open[id] }); 
+            toggleSection(id);
           }}
           aria-expanded={isOpen}
         >
@@ -101,7 +100,7 @@ export function Settings() {
         </div>
       </div>
     );
-  };
+  });
 
   React.useEffect(() => {
     (async () => {
@@ -347,10 +346,7 @@ export function Settings() {
             <input
               type="text"
               value={companyData.name}
-              onChange={(e) => {
-                console.log(`✏️ Input change - Name: "${e.target.value}"`);
-                updateCompanyField('name', e.target.value);
-              }}
+              onChange={(e) => updateCompanyField('name', e.target.value)}
               className="input"
               placeholder="Nome dell'azienda"
             />
@@ -360,10 +356,7 @@ export function Settings() {
             <input
               type="email"
               value={companyData.email}
-              onChange={(e) => {
-                console.log(`✏️ Input change - Email: "${e.target.value}"`);
-                updateCompanyField('email', e.target.value);
-              }}
+              onChange={(e) => updateCompanyField('email', e.target.value)}
               className="input"
               placeholder="email@azienda.com"
             />
