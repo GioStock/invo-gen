@@ -266,7 +266,7 @@ export async function sendInvoiceEmail(data: EmailInvoiceData, pdfBuffer: ArrayB
       text: template.text,
       attachments: [
         {
-          content: Buffer.from(pdfBuffer).toString('base64'),
+          content: btoa(String.fromCharCode(...new Uint8Array(pdfBuffer))),
           filename: `Fattura_${data.invoiceNumber}.pdf`,
           type: 'application/pdf',
           disposition: 'attachment'
