@@ -247,44 +247,43 @@ Email: ${data.companyEmail}
   return { subject, html, text };
 }
 
-// Funzione per inviare email fattura
+// Funzione per inviare email fattura (tramite Supabase Edge Function)
 export async function sendInvoiceEmail(data: EmailInvoiceData, pdfBuffer: ArrayBuffer): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    if (!IS_SENDGRID_CONFIGURED) {
-      return { success: false, error: 'Email non configurata in produzione. Configura VITE_SENDGRID_API_KEY.' };
-    }
-    const template = generateInvoiceEmailTemplate(data);
+    // Converti PDF in base64 per l'invio
+    const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBuffer)));
     
-    const msg = {
-      to: data.to,
-      from: {
-        email: data.companyEmail,
-        name: data.companyName
+    // Chiama la Supabase Edge Function
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-invoice-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
-      subject: template.subject,
-      html: template.html,
-      text: template.text,
-      attachments: [
-        {
-          content: btoa(String.fromCharCode(...new Uint8Array(pdfBuffer))),
-          filename: `Fattura_${data.invoiceNumber}.pdf`,
-          type: 'application/pdf',
-          disposition: 'attachment'
-        }
-      ]
-    };
+      body: JSON.stringify({
+        emailData: data,
+        pdfBase64: pdfBase64
+      })
+    });
 
-    const result = await sgMail.send(msg);
-    
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      return { 
+        success: false, 
+        error: result.error || 'Errore invio email' 
+      };
+    }
+
     return { 
       success: true, 
-      messageId: result[0].headers['x-message-id'] as string
+      messageId: result.messageId 
     };
   } catch (error: any) {
     console.error('Errore invio email:', error);
     return { 
       success: false, 
-      error: error.response?.body?.errors?.[0]?.message || error.message || 'Errore sconosciuto' 
+      error: error.message || 'Errore sconosciuto' 
     };
   }
 }
