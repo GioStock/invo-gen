@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, Mail, Send, TestTube } from 'lucide-react';
 import { useEmail } from '../hooks/useEmail';
-import { Invoice } from '../lib/supabase';
+import { Invoice, supabase } from '../lib/supabase';
 
 interface EmailModalProps {
   isOpen: boolean;
@@ -37,7 +37,11 @@ export function EmailModal({ isOpen, onClose, invoice, onEmailSent }: EmailModal
     if (!invoice || !email.trim()) return;
 
     try {
-      // Genera PDF (simulazione - in realtà useresti html2canvas + jsPDF)
+      // Ottieni l'email dell'utente registrato per Reply-To
+      const { data: auth } = await supabase.auth.getUser();
+      const userEmail = auth.user?.email || '';
+      
+      // Genera PDF
       const pdfBuffer = await generatePDFBuffer(invoice);
       
       const emailData = {
@@ -50,7 +54,7 @@ export function EmailModal({ isOpen, onClose, invoice, onEmailSent }: EmailModal
         status: invoice.status,
         pdfUrl: '#', // URL temporaneo
         companyName: invoice.company?.name || 'Azienda',
-        companyEmail: invoice.company?.email || 'info@azienda.com', // Email utente per Reply-To
+        companyEmail: invoice.company?.email || userEmail, // USA EMAIL REGISTRAZIONE per Reply-To!
         notes: message
       };
 
