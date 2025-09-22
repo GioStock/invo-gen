@@ -8,6 +8,7 @@ import { CustomerList } from './components/CustomerList';
 import { CustomerForm } from './components/CustomerForm';
 import { Invoice, Customer } from './lib/supabase';
 import { useInvoices } from './hooks/useInvoices';
+import { useCustomers } from './hooks/useCustomers';
 import { Landing } from './components/Landing';
 import { Auth } from './components/Auth';
 import { supabase } from './lib/supabase';
@@ -29,7 +30,8 @@ function App() {
   const [selectedInvoice, setSelectedInvoice] = React.useState<Invoice | null>(null);
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
 
-  const { getInvoice } = useInvoices();
+  const { getInvoice, refreshInvoices } = useInvoices();
+  const { refreshCustomers } = useCustomers();
 
   React.useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
@@ -61,6 +63,8 @@ function App() {
   const handleSaveInvoice = () => {
     setShowInvoiceForm(false);
     setSelectedInvoice(null);
+    // 🔄 REFRESH: Aggiorna dati dopo save fattura
+    refreshInvoices();
   };
 
   const handleCreateCustomer = () => {
@@ -76,6 +80,10 @@ function App() {
   const handleSaveCustomer = () => {
     setShowCustomerForm(false);
     setSelectedCustomer(null);
+    // 🔄 REFRESH: Aggiorna dati dopo save cliente
+    refreshCustomers();
+    // Aggiorna anche le fatture perché potrebbero mostrare i nomi clienti
+    refreshInvoices();
   };
 
   const handleSetView = (next: ViewAll) => {

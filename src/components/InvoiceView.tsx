@@ -4,6 +4,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { Invoice, supabase } from '../lib/supabase';
 import { EmailModal } from './EmailModal';
+import { useInvoices } from '../hooks/useInvoices';
 
 interface InvoiceViewProps {
   invoice: Invoice;
@@ -16,6 +17,7 @@ export function InvoiceView({ invoice, onClose, onEdit }: InvoiceViewProps) {
   const [companyData, setCompanyData] = React.useState<any>(null);
   const [showEmailModal, setShowEmailModal] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const { refreshInvoices } = useInvoices();
 
   React.useEffect(() => {
     // Carica i dati aziendali e il logo specifico della company
@@ -425,8 +427,9 @@ export function InvoiceView({ invoice, onClose, onEdit }: InvoiceViewProps) {
         onClose={() => setShowEmailModal(false)}
         invoice={invoice}
         onEmailSent={() => {
-          // Opzionale: aggiorna lo stato della fattura a "sent"
           console.log('Email inviata con successo');
+          // 🔄 REFRESH: Aggiorna lista fatture dopo invio email
+          refreshInvoices();
         }}
       />
     </div>
