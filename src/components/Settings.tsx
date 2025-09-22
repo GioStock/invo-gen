@@ -22,6 +22,11 @@ export function Settings() {
     email: ''
   });
 
+  // Ottimizzazione: callback per aggiornare i dati senza re-render completo
+  const updateCompanyField = React.useCallback((field: keyof typeof companyData, value: string) => {
+    setCompanyData(prev => ({ ...prev, [field]: value }));
+  }, []);
+
   const [open, setOpen] = React.useState<{profile:boolean;brand:boolean}>({ profile: false, brand: false });
   
   console.log('🎛️ Current accordion state:', open);
@@ -344,7 +349,7 @@ export function Settings() {
               value={companyData.name}
               onChange={(e) => {
                 console.log(`✏️ Input change - Name: "${e.target.value}"`);
-                setCompanyData({...companyData, name: e.target.value});
+                updateCompanyField('name', e.target.value);
               }}
               className="input"
               placeholder="Nome dell'azienda"
@@ -357,7 +362,7 @@ export function Settings() {
               value={companyData.email}
               onChange={(e) => {
                 console.log(`✏️ Input change - Email: "${e.target.value}"`);
-                setCompanyData({...companyData, email: e.target.value});
+                updateCompanyField('email', e.target.value);
               }}
               className="input"
               placeholder="email@azienda.com"
@@ -368,7 +373,7 @@ export function Settings() {
             <input
               type="text"
               value={companyData.address}
-              onChange={(e) => setCompanyData({...companyData, address: e.target.value})}
+              onChange={(e) => updateCompanyField('address', e.target.value)}
               className="input"
               placeholder="Via, numero civico"
             />
@@ -378,7 +383,7 @@ export function Settings() {
             <input
               type="text"
               value={companyData.city}
-              onChange={(e) => setCompanyData({...companyData, city: e.target.value})}
+              onChange={(e) => updateCompanyField('city', e.target.value)}
               className="input"
               placeholder="Città"
             />
@@ -388,7 +393,7 @@ export function Settings() {
             <input
               type="text"
               value={companyData.postal_code}
-              onChange={(e) => setCompanyData({...companyData, postal_code: e.target.value})}
+              onChange={(e) => updateCompanyField('postal_code', e.target.value)}
               className="input"
               placeholder="CAP"
             />
@@ -398,7 +403,7 @@ export function Settings() {
             <input
               type="text"
               value={companyData.country}
-              onChange={(e) => setCompanyData({...companyData, country: e.target.value})}
+              onChange={(e) => updateCompanyField('country', e.target.value)}
               className="input"
               placeholder="Paese"
             />
@@ -408,7 +413,7 @@ export function Settings() {
             <input
               type="text"
               value={companyData.vat_number}
-              onChange={(e) => setCompanyData({...companyData, vat_number: e.target.value})}
+              onChange={(e) => updateCompanyField('vat_number', e.target.value)}
               className="input"
               placeholder="IT12345678901"
             />
@@ -418,7 +423,7 @@ export function Settings() {
             <input
               type="text"
               value={companyData.fiscal_code}
-              onChange={(e) => setCompanyData({...companyData, fiscal_code: e.target.value})}
+              onChange={(e) => updateCompanyField('fiscal_code', e.target.value)}
               className="input"
               placeholder="Codice fiscale"
             />
@@ -428,7 +433,7 @@ export function Settings() {
             <input
               type="tel"
               value={companyData.phone}
-              onChange={(e) => setCompanyData({...companyData, phone: e.target.value})}
+              onChange={(e) => updateCompanyField('phone', e.target.value)}
               className="input"
               placeholder="+39 123 456 7890"
             />
