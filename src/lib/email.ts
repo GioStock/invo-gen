@@ -1,7 +1,20 @@
 import sgMail from '@sendgrid/mail';
 
-// Inizializza SendGrid
-sgMail.setApiKey(import.meta.env.VITE_SENDGRID_API_KEY);
+// Inizializza SendGrid SOLO se la chiave è valida (evita errori in browser)
+const SENDGRID_KEY = import.meta.env.VITE_SENDGRID_API_KEY as string | undefined;
+const IS_SENDGRID_CONFIGURED = Boolean(SENDGRID_KEY && SENDGRID_KEY.startsWith('SG.'));
+if (IS_SENDGRID_CONFIGURED) {
+  try {
+    sgMail.setApiKey(SENDGRID_KEY as string);
+  } catch (e) {
+    // Evita di bloccare il client in caso di errore runtime
+    // L'invio email fallirà in modo controllato nelle funzioni sotto
+    console.warn('SendGrid non inizializzato:', e);
+  }
+} else {
+  // In sviluppo o produzione senza chiave valida non inizializziamo
+  console.warn('SendGrid non configurato: manca VITE_SENDGRID_API_KEY o non inizia con "SG."');
+}
 
 export interface EmailInvoiceData {
   to: string;
@@ -237,6 +250,9 @@ Email: ${data.companyEmail}
 // Funzione per inviare email fattura
 export async function sendInvoiceEmail(data: EmailInvoiceData, pdfBuffer: ArrayBuffer): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
+    if (!IS_SENDGRID_CONFIGURED) {
+      return { success: false, error: 'Email non configurata in produzione. Configura VITE_SENDGRID_API_KEY.' };
+    }
     const template = generateInvoiceEmailTemplate(data);
     
     const msg = {
@@ -276,6 +292,9 @@ export async function sendInvoiceEmail(data: EmailInvoiceData, pdfBuffer: ArrayB
 // Funzione per inviare email di test
 export async function sendTestEmail(to: string, companyName: string, companyEmail: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
+    if (!IS_SENDGRID_CONFIGURED) {
+      return { success: false, error: 'Email non configurata in produzione. Configura VITE_SENDGRID_API_KEY.' };
+    }
     const msg = {
       to: to,
       from: {
