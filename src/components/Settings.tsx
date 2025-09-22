@@ -145,7 +145,8 @@ export function Settings() {
             vat_number: company.vat_number || '',
             fiscal_code: company.fiscal_code || '',
             phone: company.phone || '',
-            email: company.email || userEmail // Usa email utente se non c'è quella aziendale
+            // Priorità: 1) Email già salvata in company, 2) Email di registrazione utente
+            email: company.email || userEmail
           });
 
           // Carica logo specifico della company
@@ -160,7 +161,19 @@ export function Settings() {
               setLogoUrl(data.publicUrl);
             }
           }
+        } else {
+          // Se non esiste ancora una company, precarica comunque l'email dell'utente
+          setCompanyData(prev => ({
+            ...prev,
+            email: userEmail
+          }));
         }
+      } else {
+        // Se non c'è nemmeno un profilo, precarica l'email dell'utente
+        setCompanyData(prev => ({
+          ...prev,
+          email: userEmail
+        }));
       }
     })();
   }, []);
@@ -278,7 +291,10 @@ export function Settings() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+              <span className="text-xs text-gray-500 font-normal ml-1">(precaricata dalla registrazione)</span>
+            </label>
             <input
               type="email"
               value={companyData.email}
