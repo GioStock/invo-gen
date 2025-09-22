@@ -241,11 +241,7 @@ export function InvoiceList({ onCreateInvoice, onEditInvoice, onViewInvoice }: I
         onClose={() => setEmailModalInvoice(null)}
         invoice={emailModalInvoice}
         onEmailSent={() => {
-          addToast({ 
-            type: 'success', 
-            title: 'Fattura Inviata', 
-            message: 'Fattura inviata con successo e status aggiornato!' 
-          });
+          console.log('📧 Email inviata dalla lista, refreshing...');
           refreshInvoices(); // Ricarica la lista per mostrare il nuovo status
           setEmailModalInvoice(null);
         }}

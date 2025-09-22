@@ -2,6 +2,7 @@ import React from 'react';
 import { X, Mail, Send, TestTube } from 'lucide-react';
 import { useEmail } from '../hooks/useEmail';
 import { Invoice, supabase } from '../lib/supabase';
+import { useToast } from './Toast';
 
 interface EmailModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface EmailModalProps {
 
 export function EmailModal({ isOpen, onClose, invoice, onEmailSent }: EmailModalProps) {
   const { sendInvoice, sendTest, loading } = useEmail();
+  const { addToast } = useToast();
   const [email, setEmail] = React.useState('');
   const [subject, setSubject] = React.useState('');
   const [message, setMessage] = React.useState('');
@@ -79,11 +81,35 @@ export function EmailModal({ isOpen, onClose, invoice, onEmailSent }: EmailModal
           }
         }
         
-        onEmailSent?.();
-        onClose();
+        // Toast di successo
+        addToast({ 
+          type: 'success', 
+          title: 'Email Inviata!', 
+          message: `Email inviata con successo a ${email}` 
+        });
+
+        if (onEmailSent) {
+          // Se c'è onEmailSent, lascia che gestisca la chiusura
+          onEmailSent();
+        } else {
+          // Altrimenti chiudi normalmente
+          onClose();
+        }
+      } else {
+        // Toast di errore se invio fallisce
+        addToast({ 
+          type: 'error', 
+          title: 'Errore Invio', 
+          message: result.error || 'Errore durante l\'invio dell\'email' 
+        });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Errore invio fattura:', error);
+      addToast({ 
+        type: 'error', 
+        title: 'Errore', 
+        message: error.message || 'Errore sconosciuto durante l\'invio' 
+      });
     }
   };
 
