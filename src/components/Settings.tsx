@@ -2,6 +2,52 @@ import React from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from './Toast';
 
+// COMPONENTE SECTION ESTERNO - NON SI RI-CREA MAI!
+const Section = React.memo(({ title, id, children, summary, isOpen, onToggle }: { 
+  title: string; 
+  id: string; 
+  children: React.ReactNode; 
+  summary?: React.ReactNode; 
+  isOpen: boolean;
+  onToggle: () => void;
+}) => {
+  return (
+    <div className="card">
+      <button
+        type="button"
+        className="w-full flex items-center justify-between px-6 py-4 border-b transition-all duration-200 hover:bg-gray-50"
+        style={{ borderColor: 'var(--card-border)' }}
+        onClick={(e) => { 
+          e.preventDefault(); 
+          onToggle();
+        }}
+        aria-expanded={isOpen}
+      >
+        <div>
+          <h2 className="font-semibold" style={{ color: 'var(--text-color)' }}>{title}</h2>
+          {summary && <div className="text-sm opacity-70 mt-1">{summary}</div>}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm opacity-70">{isOpen ? 'Nascondi' : 'Mostra'}</span>
+          <svg
+            className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+      {isOpen && (
+        <div className="p-6">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+});
+
 export function Settings() {
   const { addToast } = useToast();
   const [logoUrl, setLogoUrl] = React.useState<string | null>(null);
@@ -59,50 +105,14 @@ export function Settings() {
 
   const [open, setOpen] = React.useState<{profile:boolean;brand:boolean}>({ profile: false, brand: false });
 
-  // Memoizza il toggle per evitare re-render
-  const toggleSection = React.useCallback((id: keyof typeof open) => {
-    setOpen(prev => ({ ...prev, [id]: !prev[id] }));
+  // Memoizza i toggle per evitare re-render
+  const toggleProfile = React.useCallback(() => {
+    setOpen(prev => ({ ...prev, profile: !prev.profile }));
   }, []);
-  
-  const Section = ({ title, id, children, summary }: { title: string; id: keyof typeof open; children: React.ReactNode; summary?: React.ReactNode }) => {
-    const isOpen = open[id];
 
-    return (
-      <div className="card">
-        <button
-          type="button"
-          className="w-full flex items-center justify-between px-6 py-4 border-b transition-all duration-200 hover:bg-gray-50"
-          style={{ borderColor: 'var(--card-border)' }}
-          onClick={(e) => { 
-            e.preventDefault(); 
-            toggleSection(id);
-          }}
-          aria-expanded={isOpen}
-        >
-          <div>
-            <h2 className="font-semibold" style={{ color: 'var(--text-color)' }}>{title}</h2>
-            {summary && <div className="text-sm opacity-70 mt-1">{summary}</div>}
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm opacity-70">{isOpen ? 'Nascondi' : 'Mostra'}</span>
-            <svg
-              className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-        </button>
-        {isOpen && (
-          <div className="p-6">
-            {children}
-          </div>
-        )}
-      </div>
-    );
-  };
+  const toggleBrand = React.useCallback(() => {
+    setOpen(prev => ({ ...prev, brand: !prev.brand }));
+  }, []);
 
   React.useEffect(() => {
     (async () => {
@@ -252,6 +262,8 @@ export function Settings() {
       <Section 
         title="Profilo Aziendale" 
         id="profile" 
+        isOpen={open.profile}
+        onToggle={toggleProfile}
         summary={<span>{companyData.name || '—'} • {companyData.email || '—'}</span>}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -356,6 +368,8 @@ export function Settings() {
       <Section 
         title="Brand" 
         id="brand"
+        isOpen={open.brand}
+        onToggle={toggleBrand}
         summary="Logo caricato"
       >
         <div className="space-y-4">
