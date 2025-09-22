@@ -61,6 +61,24 @@ export function EmailModal({ isOpen, onClose, invoice, onEmailSent }: EmailModal
       const result = await sendInvoice(emailData, pdfBuffer);
       
       if (result.success) {
+        // Auto-update status: da "draft" a "sent" se email inviata con successo
+        if (invoice.status === 'draft') {
+          try {
+            const { error } = await supabase
+              .from('invoices')
+              .update({ status: 'sent' })
+              .eq('id', invoice.id);
+            
+            if (error) {
+              console.error('Errore aggiornamento status fattura:', error);
+            } else {
+              console.log('✅ Status fattura aggiornato da "draft" a "sent"');
+            }
+          } catch (error) {
+            console.error('Errore aggiornamento status:', error);
+          }
+        }
+        
         onEmailSent?.();
         onClose();
       }

@@ -1,10 +1,11 @@
 import React from 'react';
-import { Plus, Eye, Edit, Trash2, Search, FileText } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, Search, FileText, Mail, Send } from 'lucide-react';
 import { Invoice } from '../lib/supabase';
 import { useInvoices } from '../hooks/useInvoices';
 import { ListSkeleton } from './SkeletonLoader';
 import { useConfirmModal } from './ConfirmModal';
 import { useToast } from './Toast';
+import { EmailModal } from './EmailModal';
 
 interface InvoiceListProps {
   onCreateInvoice: () => void;
@@ -13,11 +14,12 @@ interface InvoiceListProps {
 }
 
 export function InvoiceList({ onCreateInvoice, onEditInvoice, onViewInvoice }: InvoiceListProps) {
-  const { invoices, loading, deleteInvoice } = useInvoices();
+  const { invoices, loading, deleteInvoice, refreshInvoices } = useInvoices();
   const { addToast } = useToast();
   const { confirm, ConfirmModal } = useConfirmModal();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<Invoice['status'] | 'all'>('all');
+  const [emailModalInvoice, setEmailModalInvoice] = React.useState<Invoice | null>(null);
 
   const filteredInvoices = invoices.filter(invoice => {
     const matchesSearch = 
@@ -203,6 +205,17 @@ export function InvoiceList({ onCreateInvoice, onEditInvoice, onViewInvoice }: I
                         >
                           <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
+                        {/* Pulsante "Invia Fattura" - solo per fatture in bozza */}
+                        {invoice.status === 'draft' && (
+                          <button
+                            onClick={() => setEmailModalInvoice(invoice)}
+                            className="btn-ghost p-1.5 sm:p-2"
+                            title="Invia Fattura"
+                            style={{ color: 'var(--btn-bg)' }}
+                          >
+                            <Send className="w-3 h-3 sm:w-4 sm:h-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => handleDelete(invoice)}
                           className="btn-ghost p-1.5 sm:p-2"
@@ -221,6 +234,22 @@ export function InvoiceList({ onCreateInvoice, onEditInvoice, onViewInvoice }: I
       </div>
       
       <ConfirmModal />
+      
+      {/* Modal Email per invio fattura */}
+      <EmailModal
+        isOpen={!!emailModalInvoice}
+        onClose={() => setEmailModalInvoice(null)}
+        invoice={emailModalInvoice}
+        onEmailSent={() => {
+          addToast({ 
+            type: 'success', 
+            title: 'Fattura Inviata', 
+            message: 'Fattura inviata con successo e status aggiornato!' 
+          });
+          refreshInvoices(); // Ricarica la lista per mostrare il nuovo status
+          setEmailModalInvoice(null);
+        }}
+      />
     </div>
   );
 }
