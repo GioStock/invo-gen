@@ -440,6 +440,9 @@ export function InvoiceView({ invoice, onClose, onEdit }: InvoiceViewProps) {
           
           // 🔄 REFRESH: Aggiorna lista fatture dopo invio email
           refreshInvoices();
+          
+          // Chiudi il modal email
+          setShowEmailModal(false);
         }}
       />
     </div>
