@@ -4,6 +4,7 @@ import { Invoice } from '../lib/supabase';
 import { useInvoices } from '../hooks/useInvoices';
 import { ListSkeleton } from './SkeletonLoader';
 import { useConfirmModal } from './ConfirmModal';
+import { useToast } from './Toast';
 import { EmailModal } from './EmailModal';
 
 interface InvoiceListProps {
@@ -14,6 +15,7 @@ interface InvoiceListProps {
 
 export function InvoiceList({ onCreateInvoice, onEditInvoice, onViewInvoice }: InvoiceListProps) {
   const { invoices, loading, deleteInvoice, refreshInvoices } = useInvoices();
+  const { addToast } = useToast();
   const { confirm, ConfirmModal } = useConfirmModal();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<Invoice['status'] | 'all'>('all');
@@ -240,7 +242,14 @@ export function InvoiceList({ onCreateInvoice, onEditInvoice, onViewInvoice }: I
         invoice={emailModalInvoice}
         onEmailSent={() => {
           console.log('📧 Email inviata dalla lista, refreshing...');
-          // TODO: Aggiungere toast quando il provider è configurato correttamente
+          
+          // Toast di successo
+          addToast({
+            type: 'success',
+            title: 'Email inviata!',
+            message: `Fattura ${emailModalInvoice?.invoice_number} inviata con successo e status aggiornato.`
+          });
+          
           refreshInvoices(); // Ricarica la lista per mostrare il nuovo status
           setEmailModalInvoice(null);
         }}

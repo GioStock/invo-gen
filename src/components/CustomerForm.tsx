@@ -2,6 +2,7 @@ import React from 'react';
 import { X } from 'lucide-react';
 import { Customer } from '../lib/supabase';
 import { useCustomers } from '../hooks/useCustomers';
+import { useToast } from './Toast';
 
 interface CustomerFormProps {
   customer?: Customer;
@@ -11,6 +12,7 @@ interface CustomerFormProps {
 
 export function CustomerForm({ customer, onClose, onSave }: CustomerFormProps) {
   const { createCustomer, updateCustomer } = useCustomers();
+  const { addToast } = useToast();
   const [loading, setLoading] = React.useState(false);
 
   const [formData, setFormData] = React.useState({
@@ -37,13 +39,26 @@ export function CustomerForm({ customer, onClose, onSave }: CustomerFormProps) {
       }
       
       console.log('✅ Cliente salvato con successo:', result);
+      
+      // Toast di successo
+      addToast({
+        type: 'success',
+        title: customer ? 'Cliente aggiornato' : 'Cliente creato',
+        message: customer 
+          ? `Cliente ${formData.name} aggiornato con successo!`
+          : `Cliente ${formData.name} creato con successo!`
+      });
+      
       onSave();
     } catch (error: any) {
       console.error('❌ Errore nel salvataggio cliente:', error);
       
-      // Mostra errore specifico se disponibile
-      const errorMessage = error?.message || 'Errore nel salvataggio del cliente';
-      alert(errorMessage);
+      // Toast di errore invece di alert
+      addToast({
+        type: 'error',
+        title: 'Errore salvataggio',
+        message: error?.message || 'Si è verificato un errore durante il salvataggio del cliente.'
+      });
     } finally {
       setLoading(false);
     }

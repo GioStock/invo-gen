@@ -3,6 +3,7 @@ import { X, Plus, Trash2 } from 'lucide-react';
 import { Invoice, InvoiceItem, Customer, supabase } from '../lib/supabase';
 import { useCustomers } from '../hooks/useCustomers';
 import { useInvoices } from '../hooks/useInvoices';
+import { useToast } from './Toast';
 
 interface InvoiceFormProps {
   invoice?: Invoice;
@@ -13,6 +14,7 @@ interface InvoiceFormProps {
 export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
   const { customers } = useCustomers();
   const { generateInvoiceNumber, createInvoice, updateInvoice, createInvoiceItems, updateInvoiceItems } = useInvoices();
+  const { addToast } = useToast();
   
   const [formData, setFormData] = React.useState({
     invoice_number: invoice?.invoice_number || '',
@@ -159,10 +161,25 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
         await createInvoiceItems(itemsWithInvoiceId);
       }
 
+      // Toast di successo
+      addToast({
+        type: 'success',
+        title: invoice ? 'Fattura aggiornata' : 'Fattura creata',
+        message: invoice 
+          ? `Fattura ${formData.invoice_number} aggiornata con successo!`
+          : `Fattura ${formData.invoice_number} creata con successo!`
+      });
+
       onSave();
     } catch (error) {
       console.error('Errore nel salvataggio fattura:', error);
-      alert('Errore nel salvataggio della fattura');
+      
+      // Toast di errore invece di alert
+      addToast({
+        type: 'error',
+        title: 'Errore salvataggio',
+        message: 'Si è verificato un errore durante il salvataggio della fattura.'
+      });
     } finally {
       setLoading(false);
     }
