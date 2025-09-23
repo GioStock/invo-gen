@@ -5,6 +5,7 @@ import jsPDF from 'jspdf';
 import { Invoice, supabase } from '../lib/supabase';
 import { EmailModal } from './EmailModal';
 import { useInvoices } from '../hooks/useInvoices';
+import { useToast } from './Toast';
 
 interface InvoiceViewProps {
   invoice: Invoice;
@@ -18,6 +19,7 @@ export function InvoiceView({ invoice, onClose, onEdit }: InvoiceViewProps) {
   const [showEmailModal, setShowEmailModal] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const { refreshInvoices } = useInvoices();
+  const { addToast } = useToast();
 
   React.useEffect(() => {
     // Carica i dati aziendali e il logo specifico della company
@@ -428,6 +430,14 @@ export function InvoiceView({ invoice, onClose, onEdit }: InvoiceViewProps) {
         invoice={invoice}
         onEmailSent={() => {
           console.log('Email inviata con successo');
+          
+          // Toast di successo
+          addToast({
+            type: 'success',
+            title: 'Email inviata!',
+            message: `Fattura ${invoice.invoice_number} inviata con successo e status aggiornato.`
+          });
+          
           // 🔄 REFRESH: Aggiorna lista fatture dopo invio email
           refreshInvoices();
         }}
