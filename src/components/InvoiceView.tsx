@@ -17,6 +17,7 @@ export function InvoiceView({ invoice, onClose, onEdit }: InvoiceViewProps) {
   const [logoUrl, setLogoUrl] = React.useState<string | null>(null);
   const [companyData, setCompanyData] = React.useState<any>(null);
   const [showEmailModal, setShowEmailModal] = React.useState(false);
+  const [showResendConfirm, setShowResendConfirm] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const { refreshInvoices } = useInvoices();
   const { addToast } = useToast();
@@ -192,7 +193,7 @@ export function InvoiceView({ invoice, onClose, onEdit }: InvoiceViewProps) {
           <div className="flex items-center space-x-4">
             <button
               onClick={onEdit}
-              className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center px-4 py-2.5 border border-gray-300 text-sm font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow-md"
             >
               <Edit className="w-4 h-4 mr-2" />
               Modifica
@@ -200,30 +201,67 @@ export function InvoiceView({ invoice, onClose, onEdit }: InvoiceViewProps) {
             <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
             <button
               onClick={handlePickLogo}
-              className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center px-4 py-2.5 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow-md"
             >
               Imposta Logo
             </button>
             <button
-              onClick={() => setShowEmailModal(true)}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white"
+              onClick={() => {
+                if (invoice.status === 'sent' || invoice.status === 'paid' || invoice.status === 'overdue') {
+                  setShowResendConfirm(true);
+                } else {
+                  setShowEmailModal(true);
+                }
+              }}
+              className="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-semibold rounded-lg text-white transition-all duration-200 shadow-sm hover:shadow-md"
               style={{ backgroundColor: 'var(--btn-bg)' }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--btn-bg-hover)'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--btn-bg)'}
             >
               <Mail className="w-4 h-4 mr-2" />
-              Invia Email
+              {invoice.status === 'draft' ? 'Invia Email' : 'Rinvia Email'}
             </button>
+            {(invoice.status === 'sent' || invoice.status === 'overdue') && (
+              <button
+                onClick={async () => {
+                  try {
+                    const { error } = await supabase
+                      .from('invoices')
+                      .update({ status: 'paid' })
+                      .eq('id', invoice.id);
+                    
+                    if (error) throw error;
+                    
+                    addToast({
+                      type: 'success',
+                      title: 'Pagamento registrato!',
+                      message: `Fattura ${invoice.invoice_number} segnata come pagata.`
+                    });
+                    
+                    refreshInvoices();
+                  } catch (error) {
+                    addToast({
+                      type: 'error',
+                      title: 'Errore',
+                      message: 'Impossibile aggiornare lo status della fattura.'
+                    });
+                  }
+                }}
+                className="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-semibold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                💰 Segna come Pagata
+              </button>
+            )}
             <button
               onClick={handleDownload}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
             >
               <Download className="w-4 h-4 mr-2" />
               Scarica PDF
             </button>
             <button
               onClick={handlePrint}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-semibold rounded-lg text-white bg-green-600 hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow-md"
             >
               <Download className="w-4 h-4 mr-2" />
               Stampa
@@ -422,6 +460,50 @@ export function InvoiceView({ invoice, onClose, onEdit }: InvoiceViewProps) {
           </div>
         </div>
       </div>
+
+      {/* Modal di conferma rinvio email */}
+      {showResendConfirm && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
+                  <Mail className="h-6 w-6 text-yellow-600" />
+                </div>
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Rinviare la fattura?
+                </h3>
+                <p className="text-sm text-gray-500 mb-6">
+                  La fattura <strong>{invoice.invoice_number}</strong> è già stata inviata. 
+                  Sei sicuro di volerla rinviare al cliente?
+                </p>
+                <div className="flex space-x-3 justify-center">
+                  <button
+                    onClick={() => setShowResendConfirm(false)}
+                    className="px-4 py-2.5 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    Annulla
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowResendConfirm(false);
+                      setShowEmailModal(true);
+                    }}
+                    className="px-4 py-2.5 border border-transparent text-sm font-semibold rounded-lg text-white transition-all duration-200 shadow-sm hover:shadow-md"
+                    style={{ backgroundColor: 'var(--btn-bg)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--btn-bg-hover)'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--btn-bg)'}
+                  >
+                    Sì, Rinvia
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Email Modal */}
       <EmailModal
