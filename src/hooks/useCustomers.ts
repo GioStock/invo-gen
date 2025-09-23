@@ -121,6 +121,7 @@ export function useCustomers() {
     customers,
     loading,
     fetchCustomers,
+    refreshCustomers: fetchCustomers, // Alias per compatibilità
     createCustomer,
     updateCustomer,
     deleteCustomer,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase, Invoice, InvoiceItem } from '../lib/supabase';
 
 export function useInvoices() {
@@ -63,7 +63,7 @@ export function useInvoices() {
     }
   };
 
-  const generateInvoiceNumber = async (): Promise<string> => {
+  const generateInvoiceNumber = useCallback(async (): Promise<string> => {
     const year = new Date().getFullYear();
     
     // Verifica autenticazione
@@ -108,7 +108,7 @@ export function useInvoices() {
     }
     
     return `${year}-${nextNumber.toString().padStart(4, '0')}`;
-  };
+  }, []);
 
   const createInvoice = async (invoice: Omit<Invoice, 'id' | 'created_at' | 'updated_at'>) => {
     const tempId = `temp-${Date.now()}`;
@@ -209,6 +209,7 @@ export function useInvoices() {
     invoices,
     loading,
     fetchInvoices,
+    refreshInvoices: fetchInvoices, // Alias per compatibilità
     getInvoice,
     generateInvoiceNumber,
     createInvoice,

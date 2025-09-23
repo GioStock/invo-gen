@@ -83,9 +83,11 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
     if (!invoice) {
       generateInvoiceNumber().then(number => {
         setFormData(prev => ({ ...prev, invoice_number: number }));
+      }).catch(error => {
+        console.error('Errore generazione numero fattura:', error);
       });
     }
-  }, [invoice]);
+  }, [invoice, generateInvoiceNumber]);
 
   const calculations = React.useMemo(() => {
     const subtotal = items.reduce((sum, item) => sum + item.total, 0);
