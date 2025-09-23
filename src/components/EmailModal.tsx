@@ -81,30 +81,21 @@ export function EmailModal({ isOpen, onClose, invoice, onEmailSent }: EmailModal
         
         console.log('✅ Email inviata con successo a:', email);
 
+        // Chiama onEmailSent solo in caso di successo
         if (onEmailSent) {
-          // Se c'è onEmailSent, lascia che gestisca la chiusura e i toast
           onEmailSent();
         } else {
-          // Altrimenti chiudi normalmente
           onClose();
         }
       } else {
         console.error('❌ Errore invio email:', result.error);
-        // Lascia che il parent gestisca gli errori
-        if (onEmailSent) {
-          onEmailSent();
-        } else {
-          onClose();
-        }
+        // In caso di errore, chiudi semplicemente il modal
+        onClose();
       }
     } catch (error: any) {
       console.error('❌ Errore invio fattura:', error);
-      // Lascia che il parent gestisca gli errori
-      if (onEmailSent) {
-        onEmailSent();
-      } else {
-        onClose();
-      }
+      // In caso di errore generale, chiudi semplicemente il modal
+      onClose();
     }
   };
 
